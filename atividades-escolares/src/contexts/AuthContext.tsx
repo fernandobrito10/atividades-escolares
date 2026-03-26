@@ -16,9 +16,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function login(email: string, password: string): Promise<Role> {
     const response = await api.post("/auth/login", { email, password });
-    const { access, user } = response.data;
+    const { access, refresh, user } = response.data;
 
     localStorage.setItem("token", access);
+    localStorage.setItem("refresh", refresh);
     setUser(user);
 
     return user.role;
