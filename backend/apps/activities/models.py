@@ -24,4 +24,4 @@ class Atividade(models.Model):
         ordering = ["data_entrega"]
 
     def __str__(self):
-        return self.nome
+        return self.titulo

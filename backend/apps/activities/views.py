@@ -34,9 +34,9 @@ class RespostasAtividadesView(generics.ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        atividade_id = self.kwargs("pk")
+        atividade_id = self.kwargs["pk"]
 
-        if not self.request.is_professor:
+        if not user.is_professor:
             raise PermissionDenied("Apenas professores podem visualizar as respostas")
         
         try:
