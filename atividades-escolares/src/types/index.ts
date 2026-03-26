@@ -11,6 +11,8 @@ export interface Usuario {
   email: string;
   role: Role;
   turma: number | null;
+  turma_nome: string | null;
+  is_superuser: boolean;
 }
 
 export interface Atividade {

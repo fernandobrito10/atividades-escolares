@@ -1,5 +1,5 @@
 import api from './axios'
-import type { Atividade, Resposta } from '../types'
+import type { Atividade, Resposta, Turma } from '../types'
 
 export const getMinhasAtividades = () =>
     api.get<Atividade[]>("/me/atividades/");
@@ -9,3 +9,6 @@ export const criarAtividade = (data: Omit<Atividade, "id" | "professor" | "profe
 
 export const getAtividadeRespostas = (id_atividade: number) =>
     api.get<Resposta[]>(`/atividades/${id_atividade}/respostas/`);
+
+export const getTurmas = () =>
+    api.get<Turma[]>("/turmas/");

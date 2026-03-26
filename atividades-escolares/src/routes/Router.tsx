@@ -1,19 +1,31 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { LoginPage } from "../pages/login/login.page";
+import { ActivitiesPage } from "../pages/activities/activities.page";
+import { AdminPage } from "../pages/admin/admin.page";
 
 function AuthenticatedRoute({ children }: { children: React.ReactNode }) {
-    const { user } = useAuth();
+    const { user, loading } = useAuth();
+    if (loading) return null;
     return user ? <>{children}</> : <Navigate to="/login/"/>;
 }
 
 function RoleRoute({children, role}: { children: React.ReactNode; role: string }) {
-    const { user } = useAuth();
+    const { user, loading } = useAuth();
 
-    if (!user)
-        return <Navigate to="/login"/>
-    if (user.role !== role)
-        return <Navigate to="/login"/>
+    if (loading) return null;
+    if (!user) return <Navigate to="/login"/>
+    if (user.role !== role) return <Navigate to="/login"/>
+
+    return <>{children}</>
+}
+
+function AdminRoute({ children }: { children: React.ReactNode }) {
+    const { user, loading } = useAuth();
+
+    if (loading) return null;
+    if (!user) return <Navigate to="/login" />
+    if (!user.is_superuser) return <Navigate to="/login" />
 
     return <>{children}</>
 }
@@ -25,12 +37,22 @@ export default function Router() {
         {/* pública */}
         <Route path="/login" element={<LoginPage />} />
 
+        {/* admin */}
+        <Route
+          path="/admin/usuarios"
+          element={
+            <AdminRoute>
+              <AdminPage />
+            </AdminRoute>
+          }
+        />
+
         {/* professor */}
         <Route
           path="/professor/atividades"
           element={
             <RoleRoute role="professor">
-              <h1>Atividades</h1>
+              <ActivitiesPage />
             </RoleRoute>
           }
         />
@@ -55,7 +77,7 @@ export default function Router() {
           path="/aluno/atividades"
           element={
             <RoleRoute role="aluno">
-              <h1>Atividade dos alunos</h1>
+              <ActivitiesPage />
             </RoleRoute>
           }
         />

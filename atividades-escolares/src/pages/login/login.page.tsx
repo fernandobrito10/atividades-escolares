@@ -17,9 +17,11 @@ export function LoginPage() {
         setError("")
 
         try {
-            const role = await login(email, password);
+            const usuario = await login(email, password);
 
-            if (role === "professor") {
+            if (usuario.is_superuser) {
+                navigate("/admin/usuarios");
+            } else if (usuario.role === "professor") {
                 navigate("/professor/atividades");
             } else {
                 navigate("/aluno/atividades");

@@ -3,8 +3,8 @@ from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import PermissionDenied
 from apps.answers.serializers import RespostaSerializer
-from .models import Atividade
-from .serializers import AtividadeSerializer, AtividadeResumoSerializer
+from .models import Atividade, Turma
+from .serializers import AtividadeSerializer, AtividadeResumoSerializer, TurmaSerializer
 from apps.accounts.models import Usuario
 
 class MinhasAtividadesView(generics.ListCreateAPIView):
@@ -27,6 +27,12 @@ class MinhasAtividadesView(generics.ListCreateAPIView):
         if not self.request.user.is_professor:
             raise PermissionDenied("Apenas professores podem criar atividades.")
         serializer.save(professor=self.request.user)
+
+class TurmasView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = TurmaSerializer
+    queryset = Turma.objects.all()
+
 
 class RespostasAtividadesView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
