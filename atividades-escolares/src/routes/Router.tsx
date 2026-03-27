@@ -3,6 +3,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { LoginPage } from "../pages/login/login.page";
 import { ActivitiesPage } from "../pages/activities/activities.page";
 import { AdminPage } from "../pages/admin/admin.page";
+import { ResponsesPage } from "../pages/responses/responses.page";
 
 function AuthenticatedRoute({ children }: { children: React.ReactNode }) {
     const { user, loading } = useAuth();
@@ -68,7 +69,7 @@ export default function Router() {
           path="/professor/atividades/:id/respostas"
           element={
             <RoleRoute role="professor">
-              <h1>Corrigir respostas</h1>
+              <ResponsesPage />
             </RoleRoute>
           }
         />

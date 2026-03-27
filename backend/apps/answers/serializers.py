@@ -14,8 +14,8 @@ class RespostaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Resposta
-        fields = ["id", "texto", "nota", "atividade", "atividade_titulo", "aluno", "aluno_nome", "created_at", "updated_at"]
-        read_only_fields = ["id", "nota", "atividade_titulo", "aluno", "aluno_nome", "created_at", "updated_at"]
+        fields = ["id", "texto", "nota", "feedback", "atividade", "atividade_titulo", "aluno", "aluno_nome", "created_at", "updated_at"]
+        read_only_fields = ["id", "nota", "feedback", "atividade_titulo", "aluno", "aluno_nome", "created_at", "updated_at"]
 
     def validate(self, data):
         request = self.context.get("request")

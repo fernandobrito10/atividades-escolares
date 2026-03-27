@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { GraduationCap, LogOut, Calendar, BookOpen, Plus, ChevronRight, X } from "lucide-react";
+import { GraduationCap, LogOut, Calendar, BookOpen, Plus, ChevronRight, X, Clock } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { getMinhasAtividades, criarAtividade, getTurmas } from "../../api/atividades";
-import { enviarResposta } from "../../api/respostas";
-import type { Atividade, Turma } from "../../types";
+import { enviarResposta, getMinhasRespostas, editarResposta } from "../../api/respostas";
+import type { Atividade, Turma, Resposta } from "../../types";
 
 export function ActivitiesPage() {
     const { user, logout } = useAuth();
@@ -14,10 +14,17 @@ export function ActivitiesPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
-    const [modalAtividade, setModalAtividade] = useState<Atividade | null>(null);
+    const [respostas, setRespostas] = useState<Resposta[]>([]);
+
+    const [modalEnviar, setModalEnviar] = useState<Atividade | null>(null);
     const [respostaTexto, setRespostaTexto] = useState("");
     const [enviando, setEnviando] = useState(false);
-    const [respostaError, setRespostaError] = useState("");
+    const [enviarError, setEnviarError] = useState("");
+
+    const [modalVer, setModalVer] = useState<{ atividade: Atividade; resposta: Resposta } | null>(null);
+    const [textoEditado, setTextoEditado] = useState("");
+    const [salvando, setSalvando] = useState(false);
+    const [salvarError, setSalvarError] = useState("");
 
     const [modalCriar, setModalCriar] = useState(false);
     const [turmas, setTurmas] = useState<Turma[]>([]);
@@ -28,12 +35,40 @@ export function ActivitiesPage() {
     const [criando, setCriando] = useState(false);
     const [criarError, setCriarError] = useState("");
 
+    const isProfessor = user?.role === "professor";
+
     useEffect(() => {
-        getMinhasAtividades()
-            .then((res) => setAtividades(res.data))
-            .catch(() => setError("Não foi possível carregar as atividades."))
-            .finally(() => setLoading(false));
-    }, []);
+        if (isProfessor) {
+            getMinhasAtividades()
+                .then((res) => setAtividades(res.data))
+                .catch(() => setError("Não foi possível carregar as atividades."))
+                .finally(() => setLoading(false));
+        } else {
+            Promise.all([getMinhasAtividades(), getMinhasRespostas()])
+                .then(([atividadesRes, respostasRes]) => {
+                    setAtividades(atividadesRes.data);
+                    setRespostas(respostasRes.data);
+                })
+                .catch(() => setError("Não foi possível carregar as atividades."))
+                .finally(() => setLoading(false));
+        }
+    }, [isProfessor]);
+
+    function respostaDaAtividade(atividadeId: number): Resposta | undefined {
+        return respostas.find((r) => r.atividade === atividadeId);
+    }
+
+    function prazoAtivo(dataEntregaStr: string): boolean {
+        return new Date(dataEntregaStr) > new Date();
+    }
+
+    function formatarData(data: string) {
+        return new Date(data).toLocaleDateString("pt-BR", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+        });
+    }
 
     function handleLogout() {
         logout();
@@ -57,7 +92,6 @@ export function ActivitiesPage() {
     async function handleCriarAtividade() {
         setCriando(true);
         setCriarError("");
-
         try {
             const nova = await criarAtividade({
                 titulo,
@@ -74,42 +108,61 @@ export function ActivitiesPage() {
         }
     }
 
-    function abrirModal(atividade: Atividade) {
-        setModalAtividade(atividade);
+    function abrirModalEnviar(atividade: Atividade) {
+        setModalEnviar(atividade);
         setRespostaTexto("");
-        setRespostaError("");
+        setEnviarError("");
     }
 
-    function fecharModal() {
-        setModalAtividade(null);
+    function fecharModalEnviar() {
+        setModalEnviar(null);
         setRespostaTexto("");
-        setRespostaError("");
+        setEnviarError("");
     }
 
     async function handleEnviarResposta() {
-        if (!modalAtividade) return;
+        if (!modalEnviar) return;
         setEnviando(true);
-        setRespostaError("");
-
+        setEnviarError("");
         try {
-            await enviarResposta({ texto: respostaTexto, atividade: modalAtividade.id });
-            fecharModal();
+            const res = await enviarResposta({ texto: respostaTexto, atividade: modalEnviar.id });
+            setRespostas((prev) => [...prev, res.data]);
+            fecharModalEnviar();
         } catch {
-            setRespostaError("Não foi possível enviar a resposta. Verifique se você já respondeu ou se o prazo encerrou.");
+            setEnviarError("Não foi possível enviar a resposta. Verifique se o prazo encerrou.");
         } finally {
             setEnviando(false);
         }
     }
 
-    function formatarData(data: string) {
-        return new Date(data).toLocaleDateString("pt-BR", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-        });
+    function abrirModalVer(atividade: Atividade, resposta: Resposta) {
+        setModalVer({ atividade, resposta });
+        setTextoEditado(resposta.texto);
+        setSalvarError("");
     }
 
-    const isProfessor = user?.role === "professor";
+    function fecharModalVer() {
+        setModalVer(null);
+        setTextoEditado("");
+        setSalvarError("");
+    }
+
+    async function handleSalvarEdicao() {
+        if (!modalVer) return;
+        setSalvando(true);
+        setSalvarError("");
+        try {
+            await editarResposta(textoEditado, modalVer.resposta.id);
+            setRespostas((prev) =>
+                prev.map((r) => (r.id === modalVer.resposta.id ? { ...r, texto: textoEditado } : r))
+            );
+            fecharModalVer();
+        } catch {
+            setSalvarError("Não foi possível salvar a alteração.");
+        } finally {
+            setSalvando(false);
+        }
+    }
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -181,33 +234,43 @@ export function ActivitiesPage() {
 
                 {!loading && !error && atividades.length > 0 && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {atividades.map((atividade) =>
-                            isProfessor ? (
-                                <div
-                                    key={atividade.id}
-                                    className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col gap-4"
-                                >
-                                    <div className="flex-1">
-                                        <h2 className="font-semibold text-gray-800 text-base leading-snug mb-1">
-                                            {atividade.titulo}
-                                        </h2>
-                                        <span className="inline-block text-xs font-medium bg-blue-50 text-blue-600 rounded-full px-2.5 py-0.5">
-                                            {atividade.turma_nome}
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                                        <Calendar className="w-3.5 h-3.5" />
-                                        Entrega: {formatarData(atividade.data_entrega)}
-                                    </div>
-                                    <button
-                                        onClick={() => navigate(`/professor/atividades/${atividade.id}/respostas`)}
-                                        className="flex items-center justify-center gap-1.5 w-full border border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white font-medium rounded-lg py-2 text-sm transition-colors"
+                        {atividades.map((atividade) => {
+                            if (isProfessor) {
+                                return (
+                                    <div
+                                        key={atividade.id}
+                                        className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col gap-4"
                                     >
-                                        Ver respostas
-                                        <ChevronRight className="w-4 h-4" />
-                                    </button>
-                                </div>
-                            ) : (
+                                        <div className="flex-1">
+                                            <h2 className="font-semibold text-gray-800 text-base leading-snug mb-1">
+                                                {atividade.titulo}
+                                            </h2>
+                                            <span className="inline-block text-xs font-medium bg-blue-50 text-blue-600 rounded-full px-2.5 py-0.5">
+                                                {atividade.turma_nome}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                                            <Calendar className="w-3.5 h-3.5" />
+                                            Entrega: {formatarData(atividade.data_entrega)}
+                                        </div>
+                                        <button
+                                            onClick={() =>
+                                                navigate(`/professor/atividades/${atividade.id}/respostas`, {
+                                                    state: { titulo: atividade.titulo },
+                                                })
+                                            }
+                                            className="flex items-center justify-center gap-1.5 w-full border border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white font-medium rounded-lg py-2 text-sm transition-colors"
+                                        >
+                                            Ver respostas
+                                            <ChevronRight className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                );
+                            }
+
+                            const respostaExistente = respostaDaAtividade(atividade.id);
+
+                            return (
                                 <div
                                     key={atividade.id}
                                     className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col gap-4"
@@ -220,19 +283,35 @@ export function ActivitiesPage() {
                                             {atividade.descricao}
                                         </p>
                                     </div>
-                                    <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                                        <Calendar className="w-3.5 h-3.5" />
-                                        Entrega: {formatarData(atividade.data_entrega)}
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                                            <Calendar className="w-3.5 h-3.5" />
+                                            Entrega: {formatarData(atividade.data_entrega)}
+                                        </div>
+                                        {respostaExistente?.nota !== null && respostaExistente?.nota !== undefined && (
+                                            <span className="text-xs font-medium bg-green-50 text-green-700 px-2.5 py-0.5 rounded-full">
+                                                Nota: {respostaExistente.nota}
+                                            </span>
+                                        )}
                                     </div>
-                                    <button
-                                        onClick={() => abrirModal(atividade)}
-                                        className="w-full bg-blue-600 hover:bg-blue-800 text-white font-medium rounded-lg py-2 text-sm transition-colors"
-                                    >
-                                        Enviar resposta
-                                    </button>
+                                    {respostaExistente ? (
+                                        <button
+                                            onClick={() => abrirModalVer(atividade, respostaExistente)}
+                                            className="w-full border border-gray-300 text-gray-600 hover:border-blue-400 hover:text-blue-600 font-medium rounded-lg py-2 text-sm transition-colors"
+                                        >
+                                            Ver resposta
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={() => abrirModalEnviar(atividade)}
+                                            className="w-full bg-blue-600 hover:bg-blue-800 text-white font-medium rounded-lg py-2 text-sm transition-colors"
+                                        >
+                                            Enviar resposta
+                                        </button>
+                                    )}
                                 </div>
-                            )
-                        )}
+                            );
+                        })}
                     </div>
                 )}
             </main>
@@ -258,7 +337,6 @@ export function ActivitiesPage() {
                                     className="pl-4 w-full border border-gray-200 rounded-lg pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
                                 />
                             </div>
-
                             <div>
                                 <label className="pl-1 block text-sm font-medium mb-1.5 text-gray-700">Descrição</label>
                                 <textarea
@@ -269,7 +347,6 @@ export function ActivitiesPage() {
                                     className="w-full border border-gray-200 rounded-lg px-4 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-300"
                                 />
                             </div>
-
                             <div>
                                 <label className="pl-1 block text-sm font-medium mb-1.5 text-gray-700">Turma</label>
                                 <select
@@ -283,7 +360,6 @@ export function ActivitiesPage() {
                                     ))}
                                 </select>
                             </div>
-
                             <div>
                                 <label className="pl-1 block text-sm font-medium mb-1.5 text-gray-700">Data de entrega</label>
                                 <input
@@ -310,17 +386,17 @@ export function ActivitiesPage() {
                 </div>
             )}
 
-            {modalAtividade && (
+            {modalEnviar && (
                 <div className="fixed inset-0 bg-black/40 flex items-center justify-center px-4 z-50">
                     <div className="bg-white rounded-2xl shadow-lg w-full max-w-md p-8">
                         <div className="flex items-start justify-between mb-4">
                             <div>
-                                <h2 className="font-bold text-gray-800 text-base">{modalAtividade.titulo}</h2>
+                                <h2 className="font-bold text-gray-800 text-base">{modalEnviar.titulo}</h2>
                                 <p className="text-xs text-gray-400 mt-0.5">
-                                    Entrega: {formatarData(modalAtividade.data_entrega)}
+                                    Entrega: {formatarData(modalEnviar.data_entrega)}
                                 </p>
                             </div>
-                            <button onClick={fecharModal} className="text-gray-400 hover:text-gray-600 ml-4">
+                            <button onClick={fecharModalEnviar} className="text-gray-400 hover:text-gray-600 ml-4">
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
@@ -338,8 +414,8 @@ export function ActivitiesPage() {
                             />
                         </div>
 
-                        {respostaError && (
-                            <p className="text-red-700 text-sm text-center mb-3">{respostaError}</p>
+                        {enviarError && (
+                            <p className="text-red-700 text-sm text-center mb-3">{enviarError}</p>
                         )}
 
                         <button
@@ -349,6 +425,75 @@ export function ActivitiesPage() {
                         >
                             {enviando ? "Enviando..." : "Enviar"}
                         </button>
+                    </div>
+                </div>
+            )}
+
+            {modalVer && (
+                <div className="fixed inset-0 bg-black/40 flex items-center justify-center px-4 z-50">
+                    <div className="bg-white rounded-2xl shadow-lg w-full max-w-md p-8">
+                        <div className="flex items-start justify-between mb-4">
+                            <div>
+                                <h2 className="font-bold text-gray-800 text-base">{modalVer.atividade.titulo}</h2>
+                                <p className="text-xs text-gray-400 mt-0.5">
+                                    Entrega: {formatarData(modalVer.atividade.data_entrega)}
+                                </p>
+                            </div>
+                            <button onClick={fecharModalVer} className="text-gray-400 hover:text-gray-600 ml-4">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        {!prazoAtivo(modalVer.atividade.data_entrega) && (
+                            <div className="flex items-center gap-1.5 text-xs font-medium text-orange-600 bg-orange-50 rounded-lg px-3 py-2 mb-4">
+                                <Clock className="w-3.5 h-3.5" />
+                                Prazo encerrado — resposta somente leitura
+                            </div>
+                        )}
+
+                        <div className="mb-4">
+                            <label className="pl-1 block text-sm font-medium mb-1.5 text-gray-700">
+                                Sua resposta
+                            </label>
+                            <textarea
+                                value={textoEditado}
+                                onChange={(e) => setTextoEditado(e.target.value)}
+                                rows={5}
+                                readOnly={!prazoAtivo(modalVer.atividade.data_entrega)}
+                                className={`w-full border rounded-lg px-4 py-2 text-sm resize-none focus:outline-none ${
+                                    prazoAtivo(modalVer.atividade.data_entrega)
+                                        ? "border-gray-200 focus:ring-2 focus:ring-blue-300"
+                                        : "border-gray-100 bg-gray-50 text-gray-500 cursor-default"
+                                }`}
+                            />
+                        </div>
+
+                        {modalVer.resposta.nota !== null && (
+                            <div className="bg-green-50 rounded-lg px-4 py-3 mb-4 space-y-1">
+                                <p className="text-xs font-medium text-green-700">
+                                    Nota: {modalVer.resposta.nota}
+                                </p>
+                                {modalVer.resposta.feedback && (
+                                    <p className="text-sm text-green-800 leading-relaxed">
+                                        {modalVer.resposta.feedback}
+                                    </p>
+                                )}
+                            </div>
+                        )}
+
+                        {salvarError && (
+                            <p className="text-red-700 text-sm text-center mb-3">{salvarError}</p>
+                        )}
+
+                        {prazoAtivo(modalVer.atividade.data_entrega) && (
+                            <button
+                                onClick={handleSalvarEdicao}
+                                disabled={salvando || textoEditado.trim() === "" || textoEditado === modalVer.resposta.texto}
+                                className="w-full bg-blue-600 hover:bg-blue-800 disabled:bg-blue-200 text-white font-medium rounded-lg py-2 text-sm transition-colors"
+                            >
+                                {salvando ? "Salvando..." : "Salvar alterações"}
+                            </button>
+                        )}
                     </div>
                 </div>
             )}
