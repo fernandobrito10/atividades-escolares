@@ -67,6 +67,8 @@ export function ActivitiesPage() {
             day: "2-digit",
             month: "2-digit",
             year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
         });
     }
 
@@ -176,6 +178,14 @@ export function ActivitiesPage() {
                     </div>
 
                     <div className="flex items-center gap-3">
+                        {!isProfessor && (
+                            <button
+                                onClick={() => navigate("/aluno/respostas")}
+                                className="text-sm text-gray-500 hover:text-gray-800 transition-colors hidden sm:block"
+                            >
+                                Minhas Respostas
+                            </button>
+                        )}
                         <span className="text-sm text-gray-600 hidden sm:block">{user?.username}</span>
                         <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${isProfessor ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"}`}>
                             {isProfessor ? "Professor" : "Aluno"}
@@ -447,7 +457,7 @@ export function ActivitiesPage() {
                         {!prazoAtivo(modalVer.atividade.data_entrega) && (
                             <div className="flex items-center gap-1.5 text-xs font-medium text-orange-600 bg-orange-50 rounded-lg px-3 py-2 mb-4">
                                 <Clock className="w-3.5 h-3.5" />
-                                Prazo encerrado — resposta somente leitura
+                                Prazo encerrado
                             </div>
                         )}
 
