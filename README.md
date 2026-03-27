@@ -5,7 +5,7 @@ Aplicação web para gestão de atividades escolares. Professores criam atividad
 ```bash
 docker compose up --build
 ```
-(Um adendo, normalmente o comando no terminal seria normalmente assim "docker compose up --build", porém, tive erros pra rodar dessa forma por conta de uma incompatibilidade do docker com as novas versões do python onde uma biblioteca foi descontinuada, então por favor utilize o comando do docker da maneira acima. Obrigado!)
+(Um adendo, normalmente o comando no terminal seria "docker compose up --build", porém, tive erros pra rodar dessa forma por conta de uma incompatibilidade do docker com as novas versões do python onde uma biblioteca foi descontinuada, então por favor utilize o comando do docker da maneira acima. Obrigado!)
 
 ## Sem Docker
 Se não for possível rodar com o Docker faça da seguinte maneira.
