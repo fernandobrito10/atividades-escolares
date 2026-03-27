@@ -26,36 +26,36 @@ Como não foi informado alguma maneira dos usuários serem cadastrados tomei lib
 ## Decisões técnicas
 ### Backend
 
-**Django**
+**Django:**
 Escolhidos por serem o requisito do teste.
 
-**Autenticação por JWT**
+**Autenticação por JWT:**
 JWT foi adotado por ser stateless, ou seja, não exigindo sessões no servidor. O token de acesso expira em 1 hora e o refresh token em 7 dias. O refresh é feito automaticamente pelo Axios no front.
 
-**Modelo de usuário customizado (`AbstractUser`)**
+**Modelo de usuário customizado (`AbstractUser`):**
 Extender `AbstractUser` permite adicionar os campos `role` (professor/aluno) e `turma` sem perder nenhuma funcionalidade nativa do Django (admin, autenticação, permissões).
 
-**SQLite**
+**SQLite:**
 Utilizado por simplicidade no ambiente de desenvolvimento.
 
-**Separação de views por responsabilidade**
+**Separação de views por responsabilidade:**
 Cada endpoint tem sua própria view com responsabilidade única (ex: `MinhasAtividadesView` só faz GET, `CriarAtividadeView` só faz POST), tornando o código mais legível e fácil de manter.
 
-**Validações no serializer, não na view**
+**Validações no serializer, não na view:**
 Regras de negócio como "aluno não pode enviar resposta de outra turma" ou "prazo encerrado" são validadas nos serializers, centralizando a lógica e facilitando testes.
 
 ### Frontend
-**React + TypeScript + Vite**
+**React + TypeScript + Vite:**
 Utilizei React por ser um requisito e TypeScript com Vite por estar familiarizado com as tecnologias pois uso no meu trabalho.
 
 **Tailwind**
 Estilização mais bonita e mais agradável, também pela simplicidade do código.
 
-**Axios com interceptor de refresh**
+**Axios com interceptor de refresh:**
 O cliente Axios centraliza o JWT no header de todas as requisições. Um interceptor de resposta captura erros, renova o token automaticamente via `POST /auth/token/refresh/` e reenvia a requisição original sem que o usuário perceba.
 
-**Estado global mínimo (apenas AuthContext)**
+**Estado global mínimo (apenas AuthContext):**
 A sessão do usuário é o único estado global necessário. O estado das telas (listas, modais, formulários) é mantido localmente com `useState`.
 
-**Guards de rota por perfil**
+**Guards de rota por perfil:**
 `RoleRoute` e `AdminRoute` protegem rotas no frontend por role e `is_superuser`, redirecionando para `/login` caso o usuário não tenha permissão. A segurança real é garantida pelo backend.
