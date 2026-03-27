@@ -36,8 +36,6 @@ class RespostaSerializer(serializers.ModelSerializer):
         return data
     
     def create(self, validated_data):
-        request = self.context.get("request")
-        validated_data["aluno"] = request.user
         return super().create(validated_data)
     
 class RespostaAlunoUpdateSerializer(serializers.ModelSerializer):

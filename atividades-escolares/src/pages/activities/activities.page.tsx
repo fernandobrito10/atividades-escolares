@@ -179,12 +179,20 @@ export function ActivitiesPage() {
 
                     <div className="flex items-center gap-3">
                         {!isProfessor && (
-                            <button
-                                onClick={() => navigate("/aluno/respostas")}
-                                className="text-sm text-gray-500 hover:text-gray-800 transition-colors hidden sm:block"
-                            >
-                                Minhas Respostas
-                            </button>
+                            <div className="flex">
+                                <button
+                                    onClick={() => navigate("/aluno/respostas")}
+                                    className="text-sm text-gray-500 hover:text-gray-800 transition-colors hidden sm:block mr-2"
+                                >
+                                    Minhas Respostas
+                                </button>
+                                <button
+                                    className={atividades ? "text-sm hover:text-blue-600 text-blue-500" : "text-sm text-gray-500 hover:text-gray-800 transition-colors hidden sm:block" }
+                                >
+                                    Atividades
+                                </button>
+                            </div>
+
                         )}
                         <span className="text-sm text-gray-600 hidden sm:block">{user?.username}</span>
                         <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${isProfessor ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"}`}>
@@ -470,11 +478,10 @@ export function ActivitiesPage() {
                                 onChange={(e) => setTextoEditado(e.target.value)}
                                 rows={5}
                                 readOnly={!prazoAtivo(modalVer.atividade.data_entrega)}
-                                className={`w-full border rounded-lg px-4 py-2 text-sm resize-none focus:outline-none ${
-                                    prazoAtivo(modalVer.atividade.data_entrega)
+                                className={`w-full border rounded-lg px-4 py-2 text-sm resize-none focus:outline-none ${prazoAtivo(modalVer.atividade.data_entrega)
                                         ? "border-gray-200 focus:ring-2 focus:ring-blue-300"
                                         : "border-gray-100 bg-gray-50 text-gray-500 cursor-default"
-                                }`}
+                                    }`}
                             />
                         </div>
 

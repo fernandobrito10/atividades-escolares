@@ -19,11 +19,11 @@ export interface Atividade {
   id: number;
   titulo: string;
   descricao: string;
-  turma: number;
-  turma_nome: string;
   data_entrega: string;
-  professor: number;
-  professor_nome: string;
+  turma?: number;
+  turma_nome?: string;
+  professor?: number;
+  professor_nome?: string;
 }
 
 export interface Resposta {
