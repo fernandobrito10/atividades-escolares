@@ -15,13 +15,13 @@ Backend: http://localhost:8000
 Como não foi informado alguma maneira dos usuários serem cadastrados tomei liberdade para criar um usuário admin e uma rota para criar usuários (tanto professor quanto aluno), vou deixar listado abaixo todos os usuários que foram criados **para o uso do sistema**.
 | Login                  | Senha  |
 |------------------------|--------|
-| admin@email.com        | admin  | usuário admin
-| tiagoprof@email.com    | 123456 | usuário professor
-| prof@email.com         | 123456 | usuário professor
-| fernando@email.com     | 123456 | usuário aluno
-| aluno@email.com        | 123456 | usuário aluno
-| clara@email.com        | 123456 | usuário aluno
-| tatiana@email.com      | 123456 | usuário aluno
+| admin@email.com        | admin  |
+| tiagoprof@email.com    | 123456 |
+| prof@email.com         | 123456 |
+| fernando@email.com     | 123456 |
+| aluno@email.com        | 123456 |
+| clara@email.com        | 123456 |
+| tatiana@email.com      | 123456 |
 
 ## Decisões técnicas
 ### Backend
