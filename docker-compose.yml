@@ -1,0 +1,19 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+
+  frontend:
+    build:
+      context: ./atividades-escolares
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./atividades-escolares:/app
+      - /app/node_modules
+    depends_on:
+      - backend
