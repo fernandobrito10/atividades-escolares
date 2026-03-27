@@ -3,10 +3,12 @@ from django.utils import timezone
 from .models import Resposta
 
 class RespostaSerializer(serializers.ModelSerializer):
-    aluno_nome = serializers.CharField(
-        source="aluno.get_full_name",
-        read_only=True,
-    )
+    aluno_nome = serializers.SerializerMethodField()
+
+    def get_aluno_nome(self, obj):
+        full_name = obj.aluno.get_full_name()
+        return full_name if full_name else obj.aluno.username
+
     atividade_titulo = serializers.CharField(
         source="atividade.titulo",
         read_only=True,

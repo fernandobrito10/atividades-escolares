@@ -1,4 +1,3 @@
-from django.shortcuts import render
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import PermissionDenied
@@ -7,13 +6,9 @@ from apps.activities.models import Atividade
 from .serializers import RespostaSerializer, RespostaAlunoUpdateSerializer, RespostaProfessorUpdateSerializer
 
 
-class MinhasRespostasView(generics.ListCreateAPIView):
+class MinhasRespostasView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
-
-    def get_serializer_class(self):
-        if self.request.method == "POST":
-            return RespostaSerializer
-        return RespostaSerializer
+    serializer_class = RespostaSerializer
 
     def get_queryset(self):
         user = self.request.user
@@ -21,9 +16,12 @@ class MinhasRespostasView(generics.ListCreateAPIView):
         if not user.is_aluno:
             raise PermissionDenied("Apenas alunos podem ver suas respostas.")
 
-        return Resposta.objects.filter(aluno=user).select_related(
-            "atividade", "aluno"
-        )
+        return Resposta.objects.filter(aluno=user).select_related("atividade", "aluno")
+
+
+class EnviarRespostaView(generics.CreateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = RespostaSerializer
 
     def perform_create(self, serializer):
         if not self.request.user.is_aluno:
@@ -63,7 +61,8 @@ class RespostaUpdateView(generics.UpdateAPIView):
             raise PermissionDenied("Você não pode corrigir esta resposta.")
 
         return obj
-    
+
+
 class RespostasAtividadeView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = RespostaSerializer
@@ -80,4 +79,4 @@ class RespostasAtividadeView(generics.ListAPIView):
         except Atividade.DoesNotExist:
             raise PermissionDenied("Você não tem acesso a esta atividade.")
 
-        return atividade.respostas.all()
+        return atividade.respostas.select_related("aluno", "atividade").all()
